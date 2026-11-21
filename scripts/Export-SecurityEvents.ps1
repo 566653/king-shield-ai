@@ -1,11 +1,20 @@
-# Read-only export of selected local Windows Security events.
-# Requires permission to read the Security log.
+# Local, read-only Security log export. No remote connections.
 param(
     [Parameter(Mandatory=$true)][string]$OutputPath,
     [ValidateRange(1,5000)][int]$MaxEvents = 250
 )
+$ErrorActionPreference = 'Stop'
 $ids = @(4625,4720,4724,4726,4728,4732,4756,4719,1102)
-$events = Get-WinEvent -FilterHashtable @{LogName='Security'; Id=$ids} -MaxEvents $MaxEvents -ErrorAction Stop
+try {
+    $events = @(Get-WinEvent -FilterHashtable @{LogName='Security'; Id=$ids} -MaxEvents $MaxEvents -ErrorAction Stop)
+} catch {
+    if ($_.FullyQualifiedErrorId -like '*NoMatchingEventsFound*') {
+        $events = @()
+    } else {
+        Write-Error 'Unable to read Security log. Check authorized Windows permissions.'
+        exit 2
+    }
+}
 $lines = foreach ($entry in $events) {
     $groupName = ''
     try {
@@ -22,5 +31,6 @@ $lines = foreach ($entry in $events) {
         group = $groupName
     } | ConvertTo-Json -Compress
 }
-$lines | Set-Content -LiteralPath $OutputPath -Encoding UTF8
+# Ensure the destination exists even when no matching events are found.
+@($lines) | Set-Content -LiteralPath $OutputPath -Encoding UTF8
 Write-Output "Exported $(@($lines).Count) normalized events to $OutputPath"
