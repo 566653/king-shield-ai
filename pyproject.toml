@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "king-shield-ai"
+version = "0.2.0"
+description = "Offline, explainable defensive Windows security event analysis"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "Apache-2.0"}
+authors = [{name = "DR Disso King"}]
+keywords = ["cybersecurity", "windows", "active-directory", "defensive-security"]
+classifiers = ["Programming Language :: Python :: 3", "Operating System :: OS Independent"]
+
+[project.scripts]
+king-shield = "kingshield.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["kingshield*"]
