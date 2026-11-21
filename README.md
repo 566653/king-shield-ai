@@ -56,3 +56,8 @@ The failed-logon rule counts per **input batch**, not per time window. Anomaly s
 ## License
 
 Apache License 2.0 — see [LICENSE](LICENSE). Copyright 2026 DR Disso King.
+
+## Endpoint security audit (v0.4 prototype)
+
+On each authorized Windows machine, run `python -m kingshield.endpoint --audit --output endpoint-report.json`. Combine private reports offline using `python -m kingshield.endpoint --fleet pc1.json pc2.json`. This is a read-only security posture audit, **not** an antivirus, EDR, IPS or continuous fleet-monitoring service. See [Endpoint protection documentation](docs/ENDPOINT_PROTECTION.md). The script respects Windows PowerShell execution policy and may require administrator-approved configuration.
+
