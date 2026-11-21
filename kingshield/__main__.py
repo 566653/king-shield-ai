@@ -31,22 +31,33 @@ def load_events(path):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Offline Windows security event analysis")
-    parser.add_argument("input", type=Path, help="Normalized JSONL input")
+    parser.add_argument("input", type=Path, nargs="?", help="Normalized JSONL input")
+    parser.add_argument("--collect-local", action="store_true", help="Read local Windows Security log (authorized use only)")
+    parser.add_argument("--max-events", type=int, default=250, help="Maximum events for local collection")
+    parser.add_argument("--anomalies", action="store_true", help="Include explainable statistical anomaly scores")
     parser.add_argument("--threshold", type=int, default=5, help="Failed logons per source (default: 5)")
     parser.add_argument("--output", type=Path, help="Write report to JSON file")
     args = parser.parse_args(argv)
+    if args.collect_local == (args.input is not None):
+        parser.error("provide exactly one of input JSONL or --collect-local")
     try:
-        report = {"schema_version": 1, "events_processed": 0, "findings": []}
-        events = load_events(args.input)
-        report["events_processed"] = len(events)
-        report["findings"] = analyze(events, args.threshold)
+        if args.collect_local:
+            from .collector import collect_local
+            events = collect_local(args.max_events)
+        else:
+            events = load_events(args.input)
+        report = {"schema_version": 1, "events_processed": len(events),
+                  "findings": analyze(events, args.threshold)}
+        if args.anomalies:
+            from .anomaly import score_sources
+            report["anomalies"] = score_sources(events)
         result = json.dumps(report, indent=2, ensure_ascii=False)
         if args.output:
             args.output.write_text(result + "\n", encoding="utf-8")
         else:
             print(result)
         return 0
-    except (OSError, ValueError) as exc:
+    except (OSError, ValueError, RuntimeError) as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 2
 
